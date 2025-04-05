@@ -14,13 +14,14 @@ path = "src/lib.rs"
 
 [dependencies]
 roc_std.workspace = true
-roc_env = { git = "https://github.com/roc-lang/basic-cli.git" }
-roc_command = { git = "https://github.com/roc-lang/basic-cli.git" }
-roc_io_error = { git = "https://github.com/roc-lang/basic-cli.git" }
-roc_stdio = { git = "https://github.com/roc-lang/basic-cli.git" }
-roc_file = { git = "https://github.com/roc-lang/basic-cli.git" }
-roc_http = { git = "https://github.com/roc-lang/basic-cli.git" }
-roc_sqlite = { git = "https://github.com/roc-lang/basic-cli.git" }
+roc_env = { git = "https://github.com/growthagent/basic-cli.git" }
+roc_command = { git = "https://github.com/growthagent/basic-cli.git" }
+roc_crypto = { git = "https://github.com/growthagent/basic-cli.git" }
+roc_io_error = { git = "https://github.com/growthagent/basic-cli.git" }
+roc_stdio = { git = "https://github.com/growthagent/basic-cli.git" }
+roc_file = { git = "https://github.com/growthagent/basic-cli.git" }
+roc_http = { git = "https://github.com/growthagent/basic-cli.git" }
+roc_sqlite = { git = "https://github.com/growthagent/basic-cli.git" }
 libc = "0.2"
 hyper = { version = "0.14", features = [
     "http1",

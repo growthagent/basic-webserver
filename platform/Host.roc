@@ -48,6 +48,8 @@ hosted Host
         sqlite_column_value!,
         sqlite_step!,
         sqlite_reset!,
+        pbkdf2_hmac_sha256,
+        decrypt_aes256_gcm,
     ]
     imports []
 
@@ -142,3 +144,7 @@ sqlite_columns! : Box {} => List Str
 sqlite_column_value! : Box {}, U64 => Result InternalSqlite.SqliteValue InternalSqlite.SqliteError
 sqlite_step! : Box {} => Result InternalSqlite.SqliteState InternalSqlite.SqliteError
 sqlite_reset! : Box {} => Result {} InternalSqlite.SqliteError
+
+# CRYPTO
+pbkdf2_hmac_sha256 : List U8, List U8, U32, U32 -> List U8
+decrypt_aes256_gcm : List U8, List U8, List U8, List U8 -> Result (List U8) Str
