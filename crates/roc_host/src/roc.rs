@@ -328,6 +328,18 @@ pub extern "C" fn roc_fx_temp_dir() -> RocList<u8> {
     roc_env::temp_dir()
 }
 
+#[no_mangle]
+pub extern "C" fn roc_fx_dir_create(roc_path: &RocList<u8>) -> RocResult<(), roc_io_error::IOErr> {
+    roc_file::dir_create(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_dir_create_all(
+    roc_path: &RocList<u8>,
+) -> RocResult<(), roc_io_error::IOErr> {
+    roc_file::dir_create_all(roc_path)
+}
+
 #[derive(Clone, Debug)]
 pub struct Model {
     model: RocBox<()>,
@@ -503,4 +515,3 @@ pub extern "C" fn roc_fx_decrypt_aes256_gcm(ciphertext: &RocList<u8>, key: &RocL
 pub extern "C" fn roc_fx_pbkdf2_hmac_sha256(password: &RocList<u8>, salt: &RocList<u8>, iterations: u32, key_length: u32) -> RocList<u8> {
     roc_crypto::pbkdf2_hmac_sha256(password, salt, iterations, key_length)
 }
-
