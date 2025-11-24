@@ -14,11 +14,22 @@ jobs:
   test-latest-release:
     strategy:
       matrix:
-        # macos-13 uses x86_64, macos-14 uses apple silicon (arm64)
-        os: [ubuntu-22.04, macos-13, macos-14]
+        # macos-15-intel uses x86_64, macos-14 uses apple silicon (arm64)
+        os: [ubuntu-22.04, macos-15-intel, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu-')
+        run: sudo apt install -y expect ncat ripgrep
+
+      - name: Install dependencies (macOS)
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          brew install expect
+          brew install nmap
+          brew install ripgrep
 
       - name: remove everything except some ci scripts
         run: |
@@ -32,6 +43,14 @@ jobs:
 
       - name: Use ./ci/test_latest_release.sh of the latest git main
         run: mv -f ./temp/test_latest_release.sh ./ci/
+
+      - name: Remove things that dont work on musl
+        if: startsWith(matrix.os, 'ubuntu-')
+        run: |
+          rm ./ci/expect_scripts/file-accessed-modified-created-time.exp
+          rm ./examples/file-accessed-modified-created-time.roc
+          sed -i.bak -e '/time_accessed!,$/d' -e '/time_modified!,$/d' -e '/time_created!,$/d' -e '/^time_accessed!/,/^$/d' -e '/^time_modified!/,/^$/d' -e '/^time_created!/,/^$/d' -e '/^import Utc exposing \[Utc\]$/d' ./platform/File.roc
+          rm ./platform/File.roc.bak
 
       - name: Run all tests with latest roc release + latest basic-webserver release
         env:

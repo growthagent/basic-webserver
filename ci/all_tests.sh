@@ -16,12 +16,18 @@ if [ -z "${ROC}" ]; then
   exit 1
 fi
 
-
 if [ -z "${EXAMPLES_DIR}" ]; then
-  echo "ERROR: The EXAMPLES_DIR environment variable is not set." >&2
+    echo "ERROR: The EXAMPLES_DIR environment variable is not set." >&2
 
-  exit 1
+    exit 1
+else
+    EXAMPLES_DIR=$(realpath "${EXAMPLES_DIR}")/
 fi
+
+TESTS_DIR="$(dirname "$EXAMPLES_DIR")/tests/"
+export TESTS_DIR
+
+
 
 if [ "$NO_BUILD" != "1" ]; then
     if [ "$JUMP_START" == "1" ]; then
@@ -37,20 +43,39 @@ if [ "$NO_BUILD" != "1" ]; then
     fi
 fi
 
-echo "roc check"
-for roc_file in $EXAMPLES_DIR*.roc; do
+echo "roc check + matching .exp file"
+for roc_file in $TESTS_DIR*.roc; do
     $ROC check $roc_file
 done
+for roc_file in $EXAMPLES_DIR*.roc; do
+    $ROC check $roc_file
+
+    ## Check if every example has matching expect script
+
+    # Extract the base filename without extension
+    base_name=$(basename "$roc_file" .roc)
+    
+    if [ ! -f "ci/expect_scripts/${base_name}.exp" ]; then
+        echo "ERROR: No matching expect script found for $base_name" >&2
+        exit 1
+    fi
+done
+
+$ROC ci/check_all_exposed_funs_tested.roc
 
 # roc build
 architecture=$(uname -m)
 
+for roc_file in $TESTS_DIR*.roc; do
+    # --linker=legacy as workaround for https://github.com/roc-lang/roc/issues/3609
+    $ROC build --linker=legacy $roc_file
+done
 for roc_file in $EXAMPLES_DIR*.roc; do
     # --linker=legacy as workaround for https://github.com/roc-lang/roc/issues/3609
     $ROC build --linker=legacy $roc_file
 done
 
-# `roc test` every roc file if it contains a test, skip roc_nightly folder
+# `roc test` every roc file if it contains a test, but skip roc_nightly folder
 find . -type d -name "roc_nightly" -prune -o -type f -name "*.roc" -print | while read file; do
     if grep -qE '^\s*expect(\s+|$)' "$file"; then
 
@@ -66,7 +91,20 @@ find . -type d -name "roc_nightly" -prune -o -type f -name "*.roc" -print | whil
     fi
 done
 
+# Build server to test examples/http.roc later
+if [ -d "basic-cli" ]; then
+    echo "Deleting existing basic-cli folder..."
+    rm -rf basic-cli
+fi
+git clone --depth 1 https://github.com/roc-lang/basic-cli.git
+cd basic-cli/ci/rust_http_server
+cargo build --release
+cd ../../..
+
 for script in ci/expect_scripts/*.exp; do
+    if [ "$IS_MUSL" = "1" ] && grep -q "file-accessed-modified-created" "$script"; then
+        continue
+    fi
     expect "$script"
 done
 

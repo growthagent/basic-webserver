@@ -3,6 +3,7 @@ module [
     ErrCode,
     Binding,
     Stmt,
+    SqlDecodeErr,
     query!,
     query_many!,
     execute!,
@@ -13,6 +14,7 @@ module [
     errcode_to_str,
     decode_record,
     map_value,
+    map_value_result,
     tagged_value,
     str,
     bytes,
@@ -157,7 +159,7 @@ Stmt := Box {}
 ##         id: Sqlite.i64("id"),
 ##         task: Sqlite.str("task"),
 ##     },
-## })
+## })?
 ## ```
 prepare! :
     {
@@ -194,12 +196,16 @@ step! = |@Stmt(stmt)|
     |> Result.map_err(internal_to_external_error)
 
 # internal use only
+## Resets a prepared statement back to its initial state, ready to be re-executed.
 reset! : Stmt => Result {} [SqliteErr ErrCode Str]
 reset! = |@Stmt(stmt)|
     Host.sqlite_reset!(stmt)
     |> Result.map_err(internal_to_external_error)
 
-## Execute a SQL statement that doesn't return any rows (like INSERT, UPDATE, DELETE).
+## Execute a SQL statement that **doesn't return any rows** (like INSERT, UPDATE, DELETE).
+## Use a function starting with `query_` if you expect rows to be returned.
+##
+## Use execute_prepared! if you expect to run the same query multiple times.
 ##
 ## Example:
 ## ```
@@ -218,12 +224,13 @@ execute! :
         query : Str,
         bindings : List Binding,
     }
-    => Result {} [SqliteErr ErrCode Str, UnhandledRows]
+    => Result {} [SqliteErr ErrCode Str, RowsReturnedUseQueryInstead]
 execute! = |{ path, query: q, bindings }|
     stmt = try(prepare!, { path, query: q })
     execute_prepared!({ stmt, bindings })
 
-## Execute a prepared SQL statement that doesn't return any rows.
+## Execute a prepared SQL statement that **doesn't return any rows** (like INSERT, UPDATE, DELETE).
+## Use a function starting with `query_` if you expect rows to be returned.
 ##
 ## This is more efficient than [execute!] when running the same query multiple times
 ## as it reuses the prepared statement.
@@ -232,7 +239,7 @@ execute_prepared! :
         stmt : Stmt,
         bindings : List Binding,
     }
-    => Result {} [SqliteErr ErrCode Str, UnhandledRows]
+    => Result {} [SqliteErr ErrCode Str, RowsReturnedUseQueryInstead]
 execute_prepared! = |{ stmt, bindings }|
     try(bind!, stmt, bindings)
     res = step!(stmt)
@@ -242,7 +249,7 @@ execute_prepared! = |{ stmt, bindings }|
             Ok({})
 
         Ok(Row) ->
-            Err(UnhandledRows)
+            Err(RowsReturnedUseQueryInstead)
 
         Err(e) ->
             Err(e)
@@ -331,7 +338,7 @@ query_many_prepared! = |{ stmt, bindings, rows: decode }|
     try(reset!, stmt)
     res
 
-SqlDecodeErr err : [FieldNotFound Str, SqliteErr ErrCode Str]err
+SqlDecodeErr err : [NoSuchField Str, SqliteErr ErrCode Str]err
 SqlDecode a err := List Str -> (Stmt => Result a (SqlDecodeErr err))
 
 ## Decode a Sqlite row into a record by combining decoders.
@@ -371,6 +378,31 @@ map_value = |@SqlDecode(gen_decode), mapper|
             |stmt|
                 val = try(decode!, stmt)
                 Ok(mapper(val)),
+    )
+
+## Transform the output of a decoder by applying a function (that returns a Result) to the decoded value.
+## The Result is converted to SqlDecode.
+##
+## Example:
+## ```
+## decode_status : Str -> Result OnlineStatus UnknownStatusErr
+## decode_status = |status_str|
+##     when status_str is
+##         "online" -> Ok(Online)
+##         "offline" -> Ok(Offline)
+##         _ -> Err(UnknownStatus("${status_str}"))
+##
+## Sqlite.str("status") |> Sqlite.map_value_result(decode_status)
+## ```
+map_value_result : SqlDecode a err, (a -> Result c (SqlDecodeErr err)) -> SqlDecode c err
+map_value_result = |@SqlDecode(gen_decode), mapper|
+    @SqlDecode(
+        |cols|
+            decode! = gen_decode(cols)
+
+            |stmt|
+                val = try(decode!, stmt)
+                mapper(val),
     )
 
 RowCountErr err : [NoRowsReturned, TooManyRowsReturned]err
@@ -429,7 +461,7 @@ decoder = |fn|
 
                     Err(NotFound) ->
                         |_|
-                            Err(FieldNotFound(name)),
+                            Err(NoSuchField(name)),
         )
 
 ## Decode a [Value] keeping it tagged. This is useful when data could be many possible types.
@@ -568,8 +600,8 @@ f64 = real_decoder(Ok)
 f32 : Str -> SqlDecode F32 [FailedToDecodeReal []]UnexpectedTypeErr
 f32 = real_decoder(|x| Num.to_f32(x) |> Ok)
 
-# TODO: Mising Num.toDec and Num.toDecChecked
-# dec = realSqlDecoder Ok
+# TODO: Mising Num.to_dec and Num.to_dec_checked
+# dec = real_sql_decoder Ok
 
 # These are the same decoders as above but Nullable.
 # If the sqlite field is `Null`, they will return `Null`.
@@ -659,7 +691,7 @@ nullable_f64 = nullable_real_decoder(Ok)
 nullable_f32 : Str -> SqlDecode (Nullable F32) [FailedToDecodeReal []]UnexpectedTypeErr
 nullable_f32 = nullable_real_decoder(|x| Num.to_f32(x) |> Ok)
 
-# TODO: Mising Num.toDec and Num.toDecChecked
+# TODO: Mising Num.to_dec and Num.to_dec_checked
 # nullable_dec = nullable_real_decoder Ok
 
 # internal use only

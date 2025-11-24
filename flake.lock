@@ -76,11 +76,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1762224751,
-        "narHash": "sha256-qAxGAjAym3z6tPFzp5OobZA39CelNcLnFwjIEH0vSw0=",
+        "lastModified": 1756165024,
+        "narHash": "sha256-N7Ho/2OZkSwzJ9igWO10/xXCbYeBDavLgBuxuKOD/jw=",
         "owner": "roc-lang",
         "repo": "roc",
-        "rev": "954ff25fab14ff78813bb796ae78359a005536f1",
+        "rev": "5226b6d43a6af41c985dbaec4b97120c051fb218",
         "type": "github"
       },
       "original": {
@@ -128,11 +128,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1762223900,
-        "narHash": "sha256-caxpESVH71mdrdihYvQZ9rTZPZqW0GyEG9un7MgpyRM=",
+        "lastModified": 1756197489,
+        "narHash": "sha256-S16rPaBH1TnMbDyL5NlGSJcYd7wPlOEWTStdBDL7BHw=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "cfe1598d69a42a5edb204770e71b8df77efef2c3",
+        "rev": "8ec04f46f1edeeed3f870da62191745b93975da7",
         "type": "github"
       },
       "original": {

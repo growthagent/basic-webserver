@@ -44,13 +44,12 @@ exe_path! = |{}|
 ##
 ## If the value is invalid Unicode, the invalid parts will be replaced with the
 ## [Unicode replacement character](https://unicode.org/glossary/#replacement_character) ('�').
-var! : Str => Result Str [VarNotFound]
+var! : Str => Result Str [VarNotFound(Str)]
 var! = |name|
     Host.env_var!(name)
-    |> Result.map_err(|{}| VarNotFound)
+    |> Result.map_err(|{}| VarNotFound(name))
 
-## Reads the given environment variable and attempts to decode it.
-##
+## Reads the given environment variable and attempts to decode it into the correct type.
 ## The type being decoded into will be determined by type inference. For example,
 ## if this ends up being used like a `Result U16 _` then the environment variable
 ## will be decoded as a string representation of a `U16`. Trying to decode into
@@ -66,18 +65,19 @@ var! = |name|
 ## ```
 ## # Reads "NUM_THINGS" and decodes into a U16
 ## get_u16_var! : Str => Result U16 [VarNotFound, DecodeErr DecodeError] [Read [Env]]
-## get_u16_var! = \var -> Env.decode!(var)
+## get_u16_var! = |var|
+##     Env.decode!(var)
 ## ```
 ##
-## If `NUM_THINGS=123` then `getU16Var` succeeds with the value of `123u16`.
-## However if `NUM_THINGS=123456789`, then `getU16Var` will
+## If `NUM_THINGS=123` then `get_u16_var` succeeds with the value of `123u16`.
+## However if `NUM_THINGS=123456789`, then `get_u16_var` will
 ## fail with [DecodeErr](https://www.roc-lang.org/builtins/Decode#DecodeError)
 ## because `123456789` is too large to fit in a [U16](https://www.roc-lang.org/builtins/Num#U16).
 ##
-decode! : Str => Result val [VarNotFound, DecodeErr DecodeError] where val implements Decoding
+decode! : Str => Result val [VarNotFound(Str), DecodeErr DecodeError] where val implements Decoding
 decode! = |name|
     when Host.env_var!(name) is
-        Err({}) -> Err(VarNotFound)
+        Err({}) -> Err(VarNotFound(name))
         Ok(var_str) ->
             Str.to_utf8(var_str)
             |> Decode.from_bytes(EnvDecoding.format({}))
@@ -109,9 +109,9 @@ dict! = |{}|
 # ## If any key or value contains invalid Unicode, the [Unicode replacement character](https://unicode.org/glossary/#replacement_character)
 # ## (`�`) will be used in place of any parts of keys or values that are invalid Unicode.
 # walk! : state, (state, Str, Str -> state) => Result state [NonUnicodeEnv state] [Read [Env]]
-# walk! = \state, walker ->
+# walk! = |state, walker|
 #     Host.env_walk! state walker
-# TODO could potentially offer something like walkNonUnicode which takes (state, Result Str Str, Result Str Str) so it
+# TODO could potentially offer something like walk_non_unicode which takes (state, Result Str Str, Result Str Str) so it
 # tells you when there's invalid Unicode. This is both faster than (and would give you more accurate info than)
 # using regular `walk` and searching for the presence of the replacement character in the resulting
 # strings. However, it's unclear whether anyone would use it. What would the use case be? Reporting

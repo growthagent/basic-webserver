@@ -3,6 +3,8 @@ app [Model, init!, respond!] { pf: platform "../platform/main.roc" }
 import pf.Http exposing [Request, Response]
 import pf.Env
 
+# To run this example: check the README.md in this folder
+
 # We'll set this based on env var at server startup
 Model : [DebugPrintMode, NonDebugMode]
 
@@ -10,8 +12,8 @@ init! : {} => Result Model [Exit I32 Str]_
 init! = |{}|
 
     # Check if DEBUG environment variable is set
-    when Env.var!("DEBUG") is
-        Ok(var) if !(Str.is_empty(var)) -> Ok(DebugPrintMode)
+    when Env.decode!("DEBUG") is
+        Ok(1) -> Ok(DebugPrintMode)
         _ -> Ok(NonDebugMode)
 
 respond! : Request, Model => Result Response [ServerErr Str]_

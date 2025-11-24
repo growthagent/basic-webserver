@@ -32,7 +32,7 @@ Url := Str implements [Inspect]
 ## |> Url.append_param("café", "du Monde")
 ## |> Url.append_param("email", "hi@example.com")
 ## ```
-## The [Str.count_utf8_bytes](https://www.roc-lang.org/builtins/Str#countUtf8Bytes) function can be helpful in finding out how many bytes to reserve.
+## The [Str.count_utf8_bytes](https://www.roc-lang.org/builtins/Str#count_utf8_bytes) function can be helpful in finding out how many bytes to reserve.
 ##
 ## There is no `Url.with_capacity` because it's better to reserve extra capacity
 ## on a [Str] first, and then pass that string to [Url.from_str]. This function will make use
@@ -92,7 +92,7 @@ to_str = |@Url(str)| str
 ## |> Url.append("stuff")
 ##
 ## # Gives https://example.com/things/stuff/more/etc/"
-## Url.from_str "https://example.com/things/"
+## Url.from_str("https://example.com/things/")
 ## |> Url.append("/stuff/")
 ## |> Url.append("/more/etc/")
 ##
@@ -102,7 +102,12 @@ to_str = |@Url(str)| str
 ## ```
 append : Url, Str -> Url
 append = |@Url(url_str), suffix_unencoded|
-    suffix = percent_encode(suffix_unencoded)
+    # percent-encode the suffix but not the slashes
+    suffix =
+        suffix_unencoded
+        |> Str.split_on("/")
+        |> List.map(percent_encode)
+        |> Str.join_with("/")
 
     when Str.split_first(url_str, "?") is
         Ok({ before, after }) ->
@@ -155,7 +160,7 @@ append_help = |prefix, suffix|
 
                 Err(NotFound) ->
                     # This should never happen, because we already verified
-                    # that the suffix startsWith "/"
+                    # that the suffix starts_with "/"
                     # TODO `expect Bool.false` here with a comment
                     Str.concat(prefix, suffix)
         else
@@ -182,7 +187,7 @@ append_help = |prefix, suffix|
 ##
 ## ```
 ## Url.from_str("")
-## |> Url.append(myStrToEncode)
+## |> Url.append(my_str_to_encode)
 ## |> Url.to_str
 ## ```
 ##
@@ -470,13 +475,13 @@ query_params = |url|
 ##
 ## ```
 ## # Gives "example.com/"
-## Url.fromStr("https://example.com/?key1=val1&key2=val2&key3=val3#stuff")
+## Url.from_str("https://example.com/?key1=val1&key2=val2&key3=val3#stuff")
 ## |> Url.path
 ## ```
 ##
 ## ```
 ## # Gives "/foo/"
-## Url.fromStr("/foo/?key1=val1&key2=val2&key3=val3#stuff")
+## Url.from_str("/foo/?key1=val1&key2=val2&key3=val3#stuff")
 ## |> Url.path
 ## ```
 path : Url -> Str

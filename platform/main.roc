@@ -8,7 +8,6 @@ platform "webserver"
         Dir,
         Env,
         File,
-        FileMetadata,
         Http,
         MultipartFormData,
         Path,
@@ -41,11 +40,11 @@ init_for_host! = |_|
         Err(err) ->
             _ = Stderr.line!(
                 """
-                Program exited with error:
-                    ${Inspect.to_str(err)}
 
-                Tip: If you do not want to exit on this error, use `Result.map_err` to handle the error.
-                Docs for `Result.map_err`: <https://www.roc-lang.org/builtins/Result#map_err>
+                Server `init!` failed with error:
+
+                ❌ ${Inspect.to_str(err)}
+
                 """,
             )
             Err(1)
@@ -56,7 +55,7 @@ respond_for_host! = |request, boxed_model|
         Ok(response) -> InternalHttp.to_host_response(response)
         Err(ServerErr(msg)) ->
             # dicard the err here if stderr fails
-            _ = Stderr.line!(msg)
+            _ = Stderr.line!("ServerErr: ${msg}")
 
             # returns a http server error response
             {
@@ -69,11 +68,11 @@ respond_for_host! = |request, boxed_model|
             # dicard the err here if stderr fails
             _ = Stderr.line!(
                 """
-                Server error:
-                    ${Inspect.to_str(err)}
 
-                Tip: If you do not want to see this error, use `Result.map_err` to handle the error.
-                Docs for `Result.map_err`: <https://www.roc-lang.org/builtins/Result#map_err>
+                Server error:
+
+                ❌ ${Inspect.to_str(err)}
+
                 """,
             )
 

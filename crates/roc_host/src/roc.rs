@@ -1,5 +1,7 @@
+use bytes::Bytes;
 use roc_io_error::IOErr;
 use roc_std::{RocBox, RocList, RocResult, RocStr};
+use roc_sqlite;
 use std::cell::RefCell;
 use std::iter::FromIterator;
 use std::mem::size_of_val;
@@ -32,6 +34,24 @@ pub unsafe extern "C" fn roc_realloc(
 
 #[no_mangle]
 pub unsafe extern "C" fn roc_dealloc(c_ptr: *mut c_void, _alignment: u32) {
+    let heap = roc_file::heap();
+    if heap.in_range(c_ptr) {
+        heap.dealloc(c_ptr);
+        return;
+    }
+
+    let heap = roc_http::heap();
+    if heap.in_range(c_ptr) {
+        heap.dealloc(c_ptr);
+        return;
+    }
+
+    let heap = roc_sqlite::heap();
+    if heap.in_range(c_ptr) {
+        heap.dealloc(c_ptr);
+        return;
+    }
+
     libc::free(c_ptr);
 }
 
@@ -112,20 +132,36 @@ pub extern "C" fn roc_fx_send_request(
     })
 }
 
-async fn async_send_request(request: hyper::Request<hyper::Body>) -> roc_http::ResponseToAndFromHost {
-    use hyper::Client;
+use http_body_util::BodyExt;
+
+async fn async_send_request(request: hyper::Request<http_body_util::Full<Bytes>>) -> roc_http::ResponseToAndFromHost {
+    use hyper_util::client::legacy::Client;
     use hyper_rustls::HttpsConnectorBuilder;
 
-    let https = HttpsConnectorBuilder::new()
+    let https = match HttpsConnectorBuilder::new()
         .with_native_roots()
-        .https_or_http()
-        .enable_http1()
-        .build();
+    {
+        Ok(builder) => builder
+            .https_or_http()
+            .enable_http1()
+            .build(),
+        Err(err) => {
+            return roc_http::ResponseToAndFromHost {
+                status: 500,
+                headers: RocList::empty(),
+                body: format!("Failed to initialize HTTPS connector with native roots:\n\t{}", err).as_bytes().into(),
+            };
+        }
+    };
 
-    let client: Client<_, hyper::Body> = Client::builder().build(https);
-    let res = client.request(request).await;
+    let client: Client<_, http_body_util::Full<Bytes>> =
+        Client::builder(
+            hyper_util::rt::TokioExecutor::new()
+        ).build(https);
 
-    match res {
+    let response_res = client.request(request).await;
+
+    match response_res {
         Ok(response) => {
             let status = response.status();
 
@@ -135,34 +171,38 @@ async fn async_send_request(request: hyper::Request<hyper::Body>) -> roc_http::R
 
             let status = status.as_u16();
 
-            let bytes = hyper::body::to_bytes(response.into_body()).await.unwrap();
-            let body: RocList<u8> = RocList::from_iter(bytes);
+            let bytes_res =
+                response.collect().await.map(|collected| collected.to_bytes());
 
-            roc_http::ResponseToAndFromHost {
-                body,
-                status,
-                headers,
+            match bytes_res {
+                Ok(bytes) => {
+                    let body: RocList<u8> = RocList::from_iter(bytes);
+
+                    roc_http::ResponseToAndFromHost {
+                        body,
+                        status,
+                        headers,
+                    }
+                },
+                Err(err) => {
+                    let error_message = format!("{}\t\n{}", "Bad Body", err);
+                    roc_http::ResponseToAndFromHost {
+                        status: 500,
+                        headers: RocList::empty(),
+                        body: error_message.as_bytes().into(),
+                    }
+                }
             }
         }
         Err(err) => {
-            if err.is_timeout() {
-                roc_http::ResponseToAndFromHost {
-                    status: 408,
-                    headers: RocList::empty(),
-                    body: "Request Timeout".as_bytes().into(),
-                }
-            } else if err.is_connect() || err.is_closed() {
-                roc_http::ResponseToAndFromHost {
-                    status: 500,
-                    headers: RocList::empty(),
-                    body: "Network Error".as_bytes().into(),
-                }
-            } else {
-                roc_http::ResponseToAndFromHost {
-                    status: 500,
-                    headers: RocList::empty(),
-                    body: err.to_string().as_bytes().into(),
-                }
+            // TODO match on the error type to provide more specific responses with appropriate status codes
+            /*use std::error::Error;
+            let err_source_opt = err.source();*/
+
+            roc_http::ResponseToAndFromHost {
+                status: 500,
+                headers: RocList::empty(),
+                body: format!("ERROR:\n{}", err).as_bytes().into(),
             }
         }
     }
@@ -204,6 +244,11 @@ pub extern "C" fn roc_fx_stdout_write(text: &RocStr) -> RocResult<(), roc_io_err
 }
 
 #[no_mangle]
+pub extern "C" fn roc_fx_stdout_write_bytes(bytes: &RocList<u8>) -> RocResult<(), roc_io_error::IOErr> {
+    roc_stdio::stdout_write_bytes(bytes)
+}
+
+#[no_mangle]
 pub extern "C" fn roc_fx_stderr_line(line: &RocStr) -> RocResult<(), roc_io_error::IOErr> {
     roc_stdio::stderr_line(line)
 }
@@ -214,22 +259,27 @@ pub extern "C" fn roc_fx_stderr_write(text: &RocStr) -> RocResult<(), roc_io_err
 }
 
 #[no_mangle]
+pub extern "C" fn roc_fx_stderr_write_bytes(bytes: &RocList<u8>) -> RocResult<(), roc_io_error::IOErr> {
+    roc_stdio::stderr_write_bytes(bytes)
+}
+
+#[no_mangle]
 pub extern "C" fn roc_fx_posix_time() -> roc_std::U128 {
     roc_env::posix_time()
 }
 
 #[no_mangle]
-pub extern "C" fn roc_fx_command_status(
+pub extern "C" fn roc_fx_command_exec_exit_code(
     roc_cmd: &roc_command::Command,
 ) -> RocResult<i32, roc_io_error::IOErr> {
-    roc_command::command_status(roc_cmd)
+    roc_command::command_exec_exit_code(roc_cmd)
 }
 
 #[no_mangle]
-pub extern "C" fn roc_fx_command_output(
+pub extern "C" fn roc_fx_command_exec_output(
     roc_cmd: &roc_command::Command,
-) -> roc_command::OutputFromHost {
-    roc_command::command_output(roc_cmd)
+) -> RocResult<roc_command::OutputFromHostSuccess, RocResult<roc_command::OutputFromHostFailure, roc_io_error::IOErr>> {
+    roc_command::command_exec_output(roc_cmd)
 }
 
 #[no_mangle]
@@ -266,6 +316,14 @@ pub extern "C" fn roc_fx_tcp_write(stream: RocBox<()>, msg: &RocList<u8>) -> Roc
     roc_http::tcp_write(stream, msg)
 }
 
+
+#[no_mangle]
+pub extern "C" fn roc_fx_path_type(
+    roc_path: &RocList<u8>,
+) -> RocResult<roc_file::InternalPathType, roc_io_error::IOErr> {
+    roc_file::path_type(roc_path)
+}
+
 #[no_mangle]
 pub extern "C" fn roc_fx_file_write_utf8(
     roc_path: &RocList<u8>,
@@ -280,13 +338,6 @@ pub extern "C" fn roc_fx_file_write_bytes(
     roc_bytes: &RocList<u8>,
 ) -> RocResult<(), roc_io_error::IOErr> {
     roc_file::file_write_bytes(roc_path, roc_bytes)
-}
-
-#[no_mangle]
-pub extern "C" fn roc_fx_path_type(
-    roc_path: &RocList<u8>,
-) -> RocResult<roc_file::InternalPathType, roc_io_error::IOErr> {
-    roc_file::path_type(roc_path)
 }
 
 #[no_mangle]
@@ -317,15 +368,65 @@ pub extern "C" fn roc_fx_file_delete(roc_path: &RocList<u8>) -> RocResult<(), ro
 }
 
 #[no_mangle]
-pub extern "C" fn roc_fx_dir_list(
+pub extern "C" fn roc_fx_file_size_in_bytes(
     roc_path: &RocList<u8>,
-) -> RocResult<RocList<RocList<u8>>, roc_io_error::IOErr> {
-    roc_file::dir_list(roc_path)
+) -> RocResult<u64, roc_io_error::IOErr> {
+    roc_file::file_size_in_bytes(roc_path)
 }
 
 #[no_mangle]
-pub extern "C" fn roc_fx_temp_dir() -> RocList<u8> {
-    roc_env::temp_dir()
+pub extern "C" fn roc_fx_file_is_executable(
+    roc_path: &RocList<u8>,
+) -> RocResult<bool, roc_io_error::IOErr> {
+    roc_file::file_is_executable(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_file_is_readable(
+    roc_path: &RocList<u8>,
+) -> RocResult<bool, roc_io_error::IOErr> {
+    roc_file::file_is_readable(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_file_is_writable(
+    roc_path: &RocList<u8>,
+) -> RocResult<bool, roc_io_error::IOErr> {
+    roc_file::file_is_writable(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_file_time_accessed(
+    roc_path: &RocList<u8>,
+) -> RocResult<roc_std::U128, roc_io_error::IOErr> {
+    roc_file::file_time_accessed(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_file_time_modified(
+    roc_path: &RocList<u8>,
+) -> RocResult<roc_std::U128, roc_io_error::IOErr> {
+    roc_file::file_time_modified(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_file_time_created(
+    roc_path: &RocList<u8>,
+) -> RocResult<roc_std::U128, roc_io_error::IOErr> {
+    roc_file::file_time_created(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_file_exists(roc_path: &RocList<u8>) -> RocResult<bool, roc_io_error::IOErr> {
+    roc_file::file_exists(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_file_rename(
+    from_path: &RocList<u8>,
+    to_path: &RocList<u8>,
+) -> RocResult<(), roc_io_error::IOErr> {
+    roc_file::file_rename(from_path, to_path)
 }
 
 #[no_mangle]
@@ -338,6 +439,40 @@ pub extern "C" fn roc_fx_dir_create_all(
     roc_path: &RocList<u8>,
 ) -> RocResult<(), roc_io_error::IOErr> {
     roc_file::dir_create_all(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_dir_delete_empty(
+    roc_path: &RocList<u8>,
+) -> RocResult<(), roc_io_error::IOErr> {
+    roc_file::dir_delete_empty(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_dir_delete_all(
+    roc_path: &RocList<u8>,
+) -> RocResult<(), roc_io_error::IOErr> {
+    roc_file::dir_delete_all(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_dir_list(
+    roc_path: &RocList<u8>,
+) -> RocResult<RocList<RocList<u8>>, roc_io_error::IOErr> {
+    roc_file::dir_list(roc_path)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_temp_dir() -> RocList<u8> {
+    roc_env::temp_dir()
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_hard_link(
+    path_original: &RocList<u8>,
+    path_link: &RocList<u8>,
+) -> RocResult<(), roc_io_error::IOErr> {
+    roc_file::hard_link(path_original, path_link)
 }
 
 #[derive(Clone, Debug)]
@@ -500,6 +635,7 @@ pub extern "C" fn roc_fx_sqlite_step(
     roc_sqlite::step(stmt)
 }
 
+/// Resets a prepared statement back to its initial state, ready to be re-executed.
 #[no_mangle]
 pub extern "C" fn roc_fx_sqlite_reset(stmt: RocBox<()>) -> RocResult<(), roc_sqlite::SqliteError> {
     roc_sqlite::reset(stmt)
@@ -514,4 +650,15 @@ pub extern "C" fn roc_fx_decrypt_aes256_gcm(ciphertext: &RocList<u8>, key: &RocL
 #[no_mangle]
 pub extern "C" fn roc_fx_pbkdf2_hmac_sha256(password: &RocList<u8>, salt: &RocList<u8>, iterations: u32, key_length: u32) -> RocList<u8> {
     roc_crypto::pbkdf2_hmac_sha256(password, salt, iterations, key_length)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_sleep_millis(milliseconds: u64) {
+    let duration = Duration::from_millis(milliseconds);
+    std::thread::sleep(duration);
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_current_arch_os() -> roc_env::ReturnArchOS {
+    roc_env::current_arch_os()
 }

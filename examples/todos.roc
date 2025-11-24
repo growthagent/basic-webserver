@@ -9,6 +9,8 @@ import pf.Url
 import pf.Utc
 import "todos.html" as todo_html : List U8
 
+# To run this example: check the README.md in this folder
+
 Model : {
     list_todos_stmt : Sqlite.Stmt,
     create_todo_stmt : Sqlite.Stmt,
@@ -86,6 +88,7 @@ list_todos! = |{ list_todos_stmt }|
             {
                 stmt: list_todos_stmt,
                 bindings: [],
+                # This uses the record builder syntax: https://www.roc-lang.org/examples/RecordBuilder/README.html
                 rows: { Sqlite.decode_record <-
                     id: Sqlite.i64("id"),
                     task: Sqlite.str("task"),
@@ -123,11 +126,12 @@ create_todo! = |model, params|
                     },
                 )?
 
-                # prepate last created todo statement
+                # prepare last created todo statement
                 Sqlite.query_prepared!(
                     {
                         stmt: model.last_created_todo_stmt,
                         bindings: [],
+                        # This uses the record builder syntax: https://www.roc-lang.org/examples/RecordBuilder/README.html
                         row: { Sqlite.decode_record <-
                             id: Sqlite.i64("id"),
                             task: Sqlite.str("task"),
@@ -147,7 +151,7 @@ create_todo! = |model, params|
         Err(err) ->
             err_response(err)
 
-exec_transaction! : Model, ({} => Result ok err) => Result ok [FailedToBeginTransaction, FailedToEndTransaction, FailedToRollbackTransaction, TransactionFailed err]
+exec_transaction! : Model, ({} => Result ok err) => Result ok _
 exec_transaction! = |{ begin_stmt, rollback_stmt, end_stmt }, transaction!|
 
     # TODO: create a nicer transaction wrapper
@@ -157,7 +161,7 @@ exec_transaction! = |{ begin_stmt, rollback_stmt, end_stmt }, transaction!|
             bindings: [],
         },
     )
-    ? |_| FailedToBeginTransaction
+    ? FailedToBeginTransaction
 
     end_transaction! = |res|
         when res is
@@ -168,7 +172,7 @@ exec_transaction! = |{ begin_stmt, rollback_stmt, end_stmt }, transaction!|
                         bindings: [],
                     },
                 )
-                ? |_| FailedToEndTransaction
+                ? FailedToEndTransaction
 
                 Ok(v)
 
@@ -186,8 +190,7 @@ exec_transaction! = |{ begin_stmt, rollback_stmt, end_stmt }, transaction!|
                     bindings: [],
                 },
             )
-            |> Result.map_err(|_| FailedToRollbackTransaction)
-            |> try
+            ? FailedToRollbackTransaction
 
             Err(e)
 
