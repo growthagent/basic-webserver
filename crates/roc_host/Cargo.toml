@@ -14,14 +14,14 @@ path = "src/lib.rs"
 
 [dependencies]
 roc_std.workspace = true
-roc_env = { git = "https://github.com/growthagent/basic-cli.git" }
-roc_command = { git = "https://github.com/growthagent/basic-cli.git" }
-roc_crypto = { git = "https://github.com/growthagent/basic-cli.git" }
-roc_io_error = { git = "https://github.com/growthagent/basic-cli.git" }
-roc_stdio = { git = "https://github.com/growthagent/basic-cli.git" }
-roc_file = { git = "https://github.com/growthagent/basic-cli.git" }
-roc_http = { git = "https://github.com/growthagent/basic-cli.git" }
-roc_sqlite = { git = "https://github.com/growthagent/basic-cli.git" }
+roc_env = { git = "https://github.com/growthagent/basic-cli.git", tag = "0.26.0" }
+roc_command = { git = "https://github.com/growthagent/basic-cli.git", tag = "0.26.0" }
+roc_crypto = { git = "https://github.com/growthagent/basic-cli.git", tag = "0.26.0" }
+roc_io_error = { git = "https://github.com/growthagent/basic-cli.git", tag = "0.26.0" }
+roc_stdio = { git = "https://github.com/growthagent/basic-cli.git", tag = "0.26.0" }
+roc_file = { git = "https://github.com/growthagent/basic-cli.git", tag = "0.26.0" }
+roc_http = { git = "https://github.com/growthagent/basic-cli.git", tag = "0.26.0" }
+roc_sqlite = { git = "https://github.com/growthagent/basic-cli.git", tag = "0.26.0" }
 libc = "0.2.172"
 hyper = { version = "=1.6.0", features = [
     "http1",

@@ -9,3 +9,14 @@ codegen-units = 1
 
 [workspace.dependencies]
 roc_std = { git = "https://github.com/roc-lang/roc.git" }
+
+# Uncomment to use local basic-cli for development:
+# [patch."https://github.com/growthagent/basic-cli.git"]
+# roc_crypto = { path = "../basic-cli/crates/roc_crypto" }
+# roc_env = { path = "../basic-cli/crates/roc_env" }
+# roc_command = { path = "../basic-cli/crates/roc_command" }
+# roc_io_error = { path = "../basic-cli/crates/roc_io_error" }
+# roc_stdio = { path = "../basic-cli/crates/roc_stdio" }
+# roc_file = { path = "../basic-cli/crates/roc_file" }
+# roc_http = { path = "../basic-cli/crates/roc_http" }
+# roc_sqlite = { path = "../basic-cli/crates/roc_sqlite" }

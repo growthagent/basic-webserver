@@ -3,11 +3,14 @@ use roc_io_error::IOErr;
 use roc_std::{RocBox, RocList, RocResult, RocStr};
 use roc_sqlite;
 use std::cell::RefCell;
+use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::mem::size_of_val;
 use std::os::raw::c_void;
 use std::time::Duration;
 use tokio::runtime::Runtime;
+
+// Crypto functions are now provided by basic-cli's roc_crypto crate
 
 thread_local! {
    static TOKIO_RUNTIME: Runtime = tokio::runtime::Builder::new_current_thread()
@@ -647,9 +650,33 @@ pub extern "C" fn roc_fx_decrypt_aes256_gcm(ciphertext: &RocList<u8>, key: &RocL
     roc_crypto::decrypt_aes256_gcm(ciphertext, key, nonce, auth_tag)
 }
 
+/// Encrypts a plaintext with AES256-GCM.
+#[no_mangle]
+pub extern "C" fn roc_fx_encrypt_aes256_gcm(plaintext: &RocList<u8>, key: &RocList<u8>, nonce: &RocList<u8>) -> RocResult<roc_crypto::AesGcmEncryptResult, RocStr> {
+    roc_crypto::encrypt_aes256_gcm(plaintext, key, nonce)
+}
+
 #[no_mangle]
 pub extern "C" fn roc_fx_pbkdf2_hmac_sha256(password: &RocList<u8>, salt: &RocList<u8>, iterations: u32, key_length: u32) -> RocList<u8> {
     roc_crypto::pbkdf2_hmac_sha256(password, salt, iterations, key_length)
+}
+
+/// Generates cryptographically secure random bytes.
+#[no_mangle]
+pub extern "C" fn roc_fx_random_bytes(length: u32) -> RocResult<RocList<u8>, RocStr> {
+    roc_crypto::random_bytes(length)
+}
+
+/// Hashes a password using bcrypt.
+#[no_mangle]
+pub extern "C" fn roc_fx_bcrypt_hash(password: &RocList<u8>, cost: u32) -> RocResult<RocStr, RocStr> {
+    roc_crypto::bcrypt_hash(password, cost)
+}
+
+/// Verifies a password against a bcrypt hash.
+#[no_mangle]
+pub extern "C" fn roc_fx_bcrypt_verify(password: &RocList<u8>, hash: &RocStr) -> RocResult<bool, RocStr> {
+    roc_crypto::bcrypt_verify(password, hash)
 }
 
 #[no_mangle]

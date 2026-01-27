@@ -58,3 +58,8 @@ build
 *.db-shm
 
 basic-cli/
+
+.direnv
+.envrc
+.claude
+
