@@ -28,6 +28,10 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Set macOS linker flags
+        if: runner.os == 'macOS'
+        run: echo "RUSTFLAGS=-C link-arg=-Wl,-headerpad,0x4000" >> $GITHUB_ENV
+
       - name: Build platform host
         run: bash jump-start.sh
 
