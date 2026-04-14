@@ -680,6 +680,21 @@ pub extern "C" fn roc_fx_bcrypt_verify(password: &RocList<u8>, hash: &RocStr) ->
 }
 
 #[no_mangle]
+pub extern "C" fn roc_fx_hash(bytes: &RocList<u8>, algorithm: &RocStr) -> RocStr {
+    roc_crypto::hash(bytes, algorithm)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_hash_file(path: &RocStr, algorithm: &RocStr) -> RocResult<RocStr, RocStr> {
+    roc_crypto::hash_file(path, algorithm)
+}
+
+#[no_mangle]
+pub extern "C" fn roc_fx_hash_file_chunks(path: &RocStr, algorithm: &RocStr, chunk_size_bytes: u64) -> RocResult<RocStr, RocStr> {
+    roc_crypto::hash_file_chunks(path, algorithm, chunk_size_bytes)
+}
+
+#[no_mangle]
 pub extern "C" fn roc_fx_sleep_millis(milliseconds: u64) {
     let duration = Duration::from_millis(milliseconds);
     std::thread::sleep(duration);

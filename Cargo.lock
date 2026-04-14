@@ -775,13 +775,13 @@ dependencies = [
 [[package]]
 name = "roc_crypto"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.26.0#f3964d10af4de59017f7d37a52bdc268dfaa392b"
 dependencies = [
  "aes-gcm",
  "bcrypt",
  "pbkdf2",
  "rand",
  "roc_std",
+ "sha1",
  "sha2",
 ]
 
@@ -983,6 +983,17 @@ checksum = "49db231d56a190491cb4aeda9527f1ad45345af50b0851622a7adb8c03b01c32"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "sha1"
+version = "0.10.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3bf829a2d51ab4a5ddf1352d8470c140cadc8301b2ae1789db023f01cedd6ba"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
 ]
 
 [[package]]
