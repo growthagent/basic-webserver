@@ -4,7 +4,7 @@
 set -e
 
 # Repository URL
-REPO_URL="https://github.com/roc-lang/basic-cli"
+REPO_URL="https://github.com/growthagent/basic-cli"
 CLONE_DIR="basic-cli"
 
 # List of files to compare

@@ -32,7 +32,7 @@ cli_parser =
             name: "basic-webserver-builder",
             version: "",
             authors: ["Luke Boswell <https://github.com/lukewilliamboswell>"],
-            description: "Generates all files needed by Roc to use this basic-cli platform.",
+            description: "Generates all files needed by Roc to use this basic-webserver platform.",
         },
     )
     |> Cli.assert_valid

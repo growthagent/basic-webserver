@@ -348,7 +348,7 @@ type! = |path_str|
 Reader := { reader : Host.FileReader, path : Path }
 
 ## Try to open a `File.Reader` for buffered (= part by part) reading given a path string.
-## See [examples/file-read-buffered.roc](https://github.com/roc-lang/basic-cli/blob/main/examples/file-read-buffered.roc) for example usage.
+## See [examples/file-read-buffered.roc](https://github.com/roc-lang/basic-webserver/blob/main/examples/file-read-buffered.roc) for example usage.
 ##
 ## This uses [rust's std::io::BufReader](https://doc.rust-lang.org/std/io/struct.BufReader.html).
 ##
@@ -364,7 +364,7 @@ open_reader! = |path_str|
 
 ## Try to open a `File.Reader` for buffered (= part by part) reading given a path string.
 ## The buffer will be created with the specified capacity.
-## See [examples/file-read-buffered.roc](https://github.com/roc-lang/basic-cli/blob/main/examples/file-read-buffered.roc) for example usage.
+## See [examples/file-read-buffered.roc](https://github.com/roc-lang/basic-webserver/blob/main/examples/file-read-buffered.roc) for example usage.
 ##
 ## This uses [rust's std::io::BufReader](https://doc.rust-lang.org/std/io/struct.BufReader.html).
 ##
@@ -380,7 +380,7 @@ open_reader_with_capacity! = |path_str, capacity|
 ## Try to read a line from a file given a Reader.
 ## The line will be provided as the list of bytes (`List U8`) until a newline (`0xA` byte).
 ## This list will be empty when we reached the end of the file.
-## See [examples/file-read-buffered.roc](https://github.com/roc-lang/basic-cli/blob/main/examples/file-read-buffered.roc) for example usage.
+## See [examples/file-read-buffered.roc](https://github.com/roc-lang/basic-webserver/blob/main/examples/file-read-buffered.roc) for example usage.
 ##
 ## This uses [rust's `BufRead::read_line`](https://doc.rust-lang.org/std/io/trait.BufRead.html#method.read_line).
 ##
