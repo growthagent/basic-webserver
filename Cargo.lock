@@ -762,7 +762,7 @@ dependencies = [
 [[package]]
 name = "roc_command"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.28.0#af0d1b1aa38f083caabc4b2fa808b5d4e6bc8d8c"
+source = "git+https://github.com/growthagent/basic-cli.git?tag=0.29.0#8bb32672129ce3b1d351350e5333ac54101f2d9c"
 dependencies = [
  "command-group",
  "lazy_static",
@@ -775,7 +775,7 @@ dependencies = [
 [[package]]
 name = "roc_crypto"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.28.0#af0d1b1aa38f083caabc4b2fa808b5d4e6bc8d8c"
+source = "git+https://github.com/growthagent/basic-cli.git?tag=0.29.0#8bb32672129ce3b1d351350e5333ac54101f2d9c"
 dependencies = [
  "aes-gcm",
  "bcrypt",
@@ -789,7 +789,7 @@ dependencies = [
 [[package]]
 name = "roc_env"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.28.0#af0d1b1aa38f083caabc4b2fa808b5d4e6bc8d8c"
+source = "git+https://github.com/growthagent/basic-cli.git?tag=0.29.0#8bb32672129ce3b1d351350e5333ac54101f2d9c"
 dependencies = [
  "roc_file",
  "roc_std",
@@ -799,7 +799,7 @@ dependencies = [
 [[package]]
 name = "roc_file"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.28.0#af0d1b1aa38f083caabc4b2fa808b5d4e6bc8d8c"
+source = "git+https://github.com/growthagent/basic-cli.git?tag=0.29.0#8bb32672129ce3b1d351350e5333ac54101f2d9c"
 dependencies = [
  "memchr",
  "roc_io_error",
@@ -841,7 +841,7 @@ dependencies = [
 [[package]]
 name = "roc_http"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.28.0#af0d1b1aa38f083caabc4b2fa808b5d4e6bc8d8c"
+source = "git+https://github.com/growthagent/basic-cli.git?tag=0.29.0#8bb32672129ce3b1d351350e5333ac54101f2d9c"
 dependencies = [
  "bytes",
  "http-body-util",
@@ -858,7 +858,7 @@ dependencies = [
 [[package]]
 name = "roc_io_error"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.28.0#af0d1b1aa38f083caabc4b2fa808b5d4e6bc8d8c"
+source = "git+https://github.com/growthagent/basic-cli.git?tag=0.29.0#8bb32672129ce3b1d351350e5333ac54101f2d9c"
 dependencies = [
  "roc_std",
  "roc_std_heap",
@@ -867,7 +867,7 @@ dependencies = [
 [[package]]
 name = "roc_sqlite"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.28.0#af0d1b1aa38f083caabc4b2fa808b5d4e6bc8d8c"
+source = "git+https://github.com/growthagent/basic-cli.git?tag=0.29.0#8bb32672129ce3b1d351350e5333ac54101f2d9c"
 dependencies = [
  "libsqlite3-sys",
  "roc_std",
@@ -878,7 +878,7 @@ dependencies = [
 [[package]]
 name = "roc_std"
 version = "0.0.1"
-source = "git+https://github.com/roc-lang/roc.git#75f2cea340036156a1798b20acba3d82b62eac08"
+source = "git+https://github.com/roc-lang/roc.git#4b1f723d9d8b011fe15d6dc84b5a6ffd554f1e38"
 dependencies = [
  "arrayvec",
  "static_assertions",
@@ -887,7 +887,7 @@ dependencies = [
 [[package]]
 name = "roc_std_heap"
 version = "0.0.1"
-source = "git+https://github.com/roc-lang/roc.git#75f2cea340036156a1798b20acba3d82b62eac08"
+source = "git+https://github.com/roc-lang/roc.git#4b1f723d9d8b011fe15d6dc84b5a6ffd554f1e38"
 dependencies = [
  "memmap2",
  "roc_std",
@@ -896,7 +896,7 @@ dependencies = [
 [[package]]
 name = "roc_stdio"
 version = "0.0.1"
-source = "git+https://github.com/growthagent/basic-cli.git?tag=0.28.0#af0d1b1aa38f083caabc4b2fa808b5d4e6bc8d8c"
+source = "git+https://github.com/growthagent/basic-cli.git?tag=0.29.0#8bb32672129ce3b1d351350e5333ac54101f2d9c"
 dependencies = [
  "roc_io_error",
  "roc_std",
