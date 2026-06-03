@@ -37,7 +37,10 @@ run_tests! = |{}|
     
     # Test file operations
     test_file_operations!({})?
-    
+
+    # Test offset IO (set_len! / write_bytes_at! / read_bytes_at!)
+    test_path_offset_io!({})?
+
     # # Test directory operations
     test_directory_operations!({})?
     
@@ -168,6 +171,29 @@ test_file_operations! = |{}|
     Stdout.line!(
         """
         File no longer exists: ${Inspect.to_str(Result.is_err(exists_after_res))}
+        """
+    )?
+
+    Ok({})
+
+test_path_offset_io! : {} => Result {} _
+test_path_offset_io! = |{}|
+    Stdout.line!("\nTesting Path.set_len!, Path.write_bytes_at! and Path.read_bytes_at!:")?
+
+    sparse = Path.from_str("test_path_sparse.bin")
+
+    # set_len! on a missing file creates it at the requested size (sparse zeros).
+    Path.set_len!(sparse, 256)?
+    created = Path.read_bytes!(sparse)?
+
+    # write_bytes_at! drops bytes at an offset; read_bytes_at! reads them back.
+    Path.write_bytes_at!([0xAA, 0xBB, 0xCC], 100, sparse)?
+    window = Path.read_bytes_at!(sparse, 100, 3)?
+
+    Stdout.line!(
+        """
+        set_len! created a file of ${Num.to_str(List.len(created))} bytes
+        Offset round-trip matches written bytes: ${Inspect.to_str(window == [0xAA, 0xBB, 0xCC])}
         """
     )?
 
@@ -523,6 +549,7 @@ cleanup_test_files! = |files_requirement|
         "test_path_original.txt",
         "test_path_hardlink.txt",
         "test_path_rename_new.txt",
+        "test_path_sparse.bin",
         "test_regular_file.txt",
         "test_symlink_to_file.txt",
         "test_type_file.txt",

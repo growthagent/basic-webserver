@@ -36,6 +36,10 @@ JSON contains 'message' field: Bool.true
 JSON contains 'numbers' field: Bool.true
 File no longer exists: Bool.true
 
+Testing Path.set_len!, Path.write_bytes_at! and Path.read_bytes_at!:
+set_len! created a file of 256 bytes
+Offset round-trip matches written bytes: Bool.true
+
 Testing Path directory operations...
 Nested directory structure:
 test_parent
