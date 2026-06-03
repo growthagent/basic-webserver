@@ -10,6 +10,8 @@
 
 # Ignore generated docs
 generated-docs/
+release_docs/
+temp_docs/
 
 target/
 
