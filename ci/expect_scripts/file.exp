@@ -43,7 +43,7 @@ Line 2: Second line
 
 Testing File.hard_link!:
 ✓ Successfully created hard link: test_link_to_original.txt
-Hard link inodes should be equal: Bool.true
+✓ Hard link has same inode as original
 ✓ Hard link contains same content as original
 
 Testing File.rename!:
@@ -62,6 +62,24 @@ Testing File.size_in_bytes!:
 Testing File.is_dir!:
 ✓ Current directory '.' is recognized as a directory
 ✓ Regular file is correctly not recognized as a directory
+
+Testing File.set_len! and File.write_bytes_at!:
+✓ File.set_len! created a 64 KiB file \\(size = 65536\\)
+✓ File.write_bytes_at! preserved file size \\(got 65536\\)
+✓ Bytes landed at offset 100 with zeros on either side \\(got \\\[0, 170, 187, 204, 0\\\]\\)
+✓ Second write at offset 200 didn't disturb the first write at offset 100 \\(byte 100 = 170, byte 200 = 222\\)
+✓ write_bytes_at! correctly rejected a non-existent file
+✓ set_len! to a smaller size shrank the file to 150 bytes \\(got 150\\)
+✓ Read returns exactly 150 bytes after shrink \\(got 150\\)
+✓ Bytes within the new length survived the shrink \\(byte 100 = 170\\)
+✓ set_len! to a larger size extended the file to 1024 bytes \\(got 1024\\)
+✓ Newly-extended region reads as zeros \\(byte 500 = 0\\)
+✓ write_bytes_at! past EOF extended the file to 2002 bytes \\(got 2002\\)
+✓ Past-EOF write landed at offset 2000, gap zero-filled \\(byte 1500 = 0, byte 2000 = 238, byte 2001 = 255\\)
+✓ write_bytes_at! with an empty byte list is a no-op \\(was 2002, now 2002\\)
+✓ Pure-sparse set_len! read returns 256 zero bytes \\(len = 256, all_zero = Bool.true\\)
+✓ read_bytes_at! returned the 3 bytes at offset 100 \\(got \\\[170, 187, 204\\\]\\)
+✓ read_bytes_at! past EOF errored
 
 I ran all file function tests.
 
